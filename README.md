@@ -3,8 +3,8 @@
 週表示・月表示の切り替え機能を実装し、日付ごとの予定の追加・編集・削除（CRUD）を行うことができます。
 
 ## 使用技術
-- Next.js 16
-- React 19
+- Next.js 16.1.6
+- React 19.2.3
 - TypeScript 5
 - Tailwind CSS 4
 - react-modal
