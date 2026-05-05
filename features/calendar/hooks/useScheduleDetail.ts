@@ -1,5 +1,5 @@
 import { EditSchedule, Schedule } from "@/types/calendar";
-import { ChangeEvent, SubmitEvent, useEffect, useState } from "react";
+import { ChangeEvent, SubmitEvent, useState } from "react";
 
 type PropsType = {
   closeModal: () => void;
@@ -20,11 +20,20 @@ const useScheduleDetail = ({
     description: "",
   });
 
+  const startEditing = () => {
+    if (!selectedSchedule) return;
+    setEditSchedule({
+      title: selectedSchedule.title,
+      description: selectedSchedule.description,
+    });
+    setIsEditing(true);
+  };
+
   const changeEditSchedule = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
-    setEditSchedule({ ...editSchedule, [name]: value });
+    setEditSchedule((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditSchedule = (event: SubmitEvent<HTMLFormElement>) => {
@@ -56,17 +65,9 @@ const useScheduleDetail = ({
     closeModal();
   };
 
-  useEffect(() => {
-    if (!selectedSchedule) return;
-    setEditSchedule({
-      title: selectedSchedule.title,
-      description: selectedSchedule.description,
-    });
-    setIsEditing(false);
-  }, [selectedSchedule]);
-
   return {
     isEditing,
+    startEditing,
     setIsEditing,
     handleEditSchedule,
     editSchedule,

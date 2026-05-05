@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   eachDayOfInterval,
   eachWeekOfInterval,
@@ -15,91 +15,53 @@ type PropsType = {
 };
 
 const useMonthCalendar = ({ currentDate }: PropsType) => {
-  const [dateList, setDateList] = useState<MonthDateList>([]);
+  const [scheduleList, setScheduleList] = useState<Schedule[]>(() =>
+    getScheduleList(),
+  );
 
-  const getDateListIndex = (
-    currentDateList: MonthDateList,
-    schedule: Schedule,
-  ) => {
-    // currentDateList を1週間ずつ取り出す -> その週の中に schedule.date と同じ日があるかチェック -> あればその週の index を返す
-    const firstIndex = currentDateList.findIndex((onWeek) =>
-      onWeek.some((item) => isSameDay(item.date, schedule.date)),
-    );
-    if (firstIndex === -1) return [-1, -1];
-    // 予定が入る週を1日ずつ取り出す -> その1日と schedule.date と同じ日があるかチェック -> あればその1日の index を返す
-    const secondIndex = currentDateList[firstIndex].findIndex((item) =>
-      isSameDay(item.date, schedule.date),
-    );
-    return [firstIndex, secondIndex];
-  };
-
-  const addSchedule = (schedule: Schedule) => {
-    const newDateList = [...dateList];
-
-    const [firstIndex, secondIndex] = getDateListIndex(newDateList, schedule);
-    if (firstIndex === -1) return;
-
-    newDateList[firstIndex][secondIndex].schedules = [
-      ...newDateList[firstIndex][secondIndex].schedules,
-      schedule,
-    ];
-    setDateList(newDateList);
-  };
-
-  const saveSchedule = (schedule: Schedule) => {
-    const newDateList = [...dateList];
-
-    const [firstIndex, secondIndex] = getDateListIndex(newDateList, schedule);
-    if (firstIndex === -1) return;
-
-    const schedules = newDateList[firstIndex][secondIndex].schedules.map(
-      (item) => (item.id === schedule.id ? schedule : item),
-    );
-    newDateList[firstIndex][secondIndex].schedules = schedules;
-    setDateList(newDateList);
-  };
-
-  const deleteSchedule = (schedule: Schedule) => {
-    const newDateList = [...dateList];
-
-    const [firstIndex, secondIndex] = getDateListIndex(newDateList, schedule);
-    if (firstIndex === -1) return;
-
-    const schedules = newDateList[firstIndex][secondIndex].schedules.filter(
-      (item) => item.id !== schedule.id,
-    );
-    newDateList[firstIndex][secondIndex].schedules = schedules;
-    setDateList(newDateList);
-  };
-
-  useEffect(() => {
+  const dateList = useMemo(() => {
     // 表示したい1ヶ月カレンダーの各週初日の日付(日曜日)の配列を作成
     const monthOfSundayList = eachWeekOfInterval({
       start: startOfMonth(currentDate),
       end: endOfMonth(currentDate),
     });
     // 1ヶ月の二次元配列を作成
-    const newDateList: MonthDateList = monthOfSundayList.map((date) => {
+    const baseList: MonthDateList = monthOfSundayList.map((date) =>
       // 1週間の配列を作成
-      return eachDayOfInterval({
+      eachDayOfInterval({
         start: date,
         end: endOfWeek(date),
-      }).map((date) => ({ date, schedules: [] as Schedule[] }));
-    });
+      }).map((date) => ({ date, schedules: [] as Schedule[] })),
+    );
 
-    const scheduleList = getScheduleList();
     scheduleList.forEach((schedule) => {
-      const [firstIndex, secondIndex] = getDateListIndex(newDateList, schedule);
-      if (firstIndex === -1) return;
-
-      // その日の schedules 配列に、schedule を追加
-      newDateList[firstIndex][secondIndex].schedules = [
-        ...newDateList[firstIndex][secondIndex].schedules,
-        schedule,
-      ];
+      // baseList を1週間ずつ取り出す -> その週の中に schedule.date と同じ日があるかチェック -> あればその週の index を返す
+      const weekIndex = baseList.findIndex((week) =>
+        week.some((item) => isSameDay(item.date, schedule.date)),
+      );
+      if (weekIndex === -1) return;
+      // 予定が入る週を1日ずつ取り出す -> その1日と schedule.date と同じ日があるかチェック -> あればその1日の index を返す
+      const dayIndex = baseList[weekIndex].findIndex((item) =>
+        isSameDay(item.date, schedule.date),
+      );
+      baseList[weekIndex][dayIndex].schedules.push(schedule);
     });
-    setDateList(newDateList);
-  }, [currentDate]);
+    return baseList;
+  }, [currentDate, scheduleList]);
+
+  const addSchedule = (schedule: Schedule) => {
+    setScheduleList((prev) => [...prev, schedule]);
+  };
+
+  const saveSchedule = (schedule: Schedule) => {
+    setScheduleList((prev) =>
+      prev.map((item) => (item.id === schedule.id ? schedule : item)),
+    );
+  };
+
+  const deleteSchedule = (schedule: Schedule) => {
+    setScheduleList((prev) => prev.filter((item) => item.id !== schedule.id));
+  };
 
   return {
     dateList,

@@ -31,6 +31,7 @@ const ScheduleDetailModal = ({
   const {
     isEditing,
     setIsEditing,
+    startEditing,
     handleEditSchedule,
     editSchedule,
     changeEditSchedule,
@@ -45,7 +46,10 @@ const ScheduleDetailModal = ({
   return (
     <Modal
       isOpen={!!selectedSchedule}
-      onRequestClose={closeModal}
+      onRequestClose={() => {
+        setIsEditing(false);
+        closeModal();
+      }}
       style={customStyles}
     >
       {isEditing
@@ -107,11 +111,7 @@ const ScheduleDetailModal = ({
               <p>{format(selectedSchedule.date, "yyyy年M月d日")}</p>
               <p>{selectedSchedule.description}</p>
               <div className="flex justify-center gap-3">
-                <PrimaryBtn
-                  size="lg"
-                  color="primary"
-                  onClick={() => setIsEditing(true)}
-                >
+                <PrimaryBtn size="lg" color="primary" onClick={startEditing}>
                   編集
                 </PrimaryBtn>
                 <PrimaryBtn
